@@ -8,6 +8,11 @@ import java.io.PrintStream;
 import java.util.Random;
 import java.util.StringTokenizer;
 
+/**
+ * 自编码器额实现
+ * @author whl
+ *
+ */
 public class ANN {
 	
 	private static int inputDim = 10;				//输入数据维数
