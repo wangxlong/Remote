@@ -17,6 +17,7 @@
 
 package org.apache.mahout.clustering.syntheticcontrol.canopy;
 
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 
@@ -51,9 +52,10 @@ public final class Job extends AbstractJob {
       ToolRunner.run(new Configuration(), new Job(), args);
     } else {
       log.info("Running with default arguments");
-      Path output = new Path("output");
+      Path output = new Path("hdfs://192.168.95.131:9000/user/mahout/Canopyoutput");
       HadoopUtil.delete(new Configuration(), output);
-      run(new Path("testdata"), output, new EuclideanDistanceMeasure(), 80, 55);
+      //输入文件数据之间一定要以空格隔开，否则解析会出错
+      run(new Path("movement_libras.data1.txt"), output, new EuclideanDistanceMeasure(), 0.3, 0.6);
     }
   }
 
@@ -82,15 +84,22 @@ public final class Job extends AbstractJob {
   private static void run(Path input, Path output, DistanceMeasure measure,
       double t1, double t2) throws Exception {
     Path directoryContainingConvertedInput = new Path(output,
-        DIRECTORY_CONTAINING_CONVERTED_INPUT);
-    InputDriver.runJob(input, directoryContainingConvertedInput,
+        DIRECTORY_CONTAINING_CONVERTED_INPUT);//output是父目录，DIRECTORY_CONTAINING_CONVERTED_INPUT是父目录下的子目录
+    InputDriver.runJob(input, directoryContainingConvertedInput, //data里面存放着数据序列化的文件
         "org.apache.mahout.math.RandomAccessSparseVector");
     CanopyDriver.run(new Configuration(), directoryContainingConvertedInput,
         output, measure, t1, t2, true, 0.0, false);
     // run ClusterDumper
     ClusterDumper clusterDumper = new ClusterDumper(new Path(output,
-        "clusters-0-final"), new Path(output, "clusteredPoints"));
+       "clusters-0-final"), new Path(output, "clusteredPoints"));
+    //String aa="C:\\Users\\whl\\Desktop\\WHL\\common-knowleage\\hadoop\\mahout-exec\\canopy\\output\\a.txt";
+    //clusterDumper.setTermDictionary(aa, "text");AbstractJob
+    //Job job=new Job();
+    //this.outputFile=new File(aa);
     clusterDumper.printClusters(null);
+    
+    //cluster-0-finall文件夹存放的是聚类中心的信息
+    //clusteredPoints存放的是点的聚类结果信息
   }
 
   @Override
