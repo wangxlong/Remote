@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="sport.user.register.dao.UserOperatorDao">
+
+	<!-- 注册用户 -->
+	 <insert id="registerUserdao" parameterType="sport.user.register.domain.UserRegisterBean" >
+		 <selectKey resultType="String" keyProperty="id" order="BEFORE"> 
+              select max(id)+1  as id from  USERS 
+    	 </selectKey>
+    	
+        insert into USERS(id,email,encrypted_password,current_sign_in_at,current_sign_in_ip,phone,created_at,user_name,age,gender,address,is_iphone,recommener,vip_to)  
+             values(#{id},#{email},#{encrypted_password},sysdate,#{current_sign_in_ip},#{phone},sysdate,#{user_name},#{age},#{gender},#{address},#{is_iphone},#{recommener},sysdate+14)      
+    </insert>
+    
+    <!-- 查询是否有该用户 -->
+    <select id="loginSelectUsername" parameterType="String" resultType="String">
+    	select encrypted_password from USERS where user_name=#{user_nameOrPhone} or phone=#{user_nameOrPhone}
+    </select>
+    
+    <!-- 查询是否有该phone对应的用户 -->
+    <!-- <select id="loginSelectPhone" parameterType="String" resultType="String">
+    	select encrypted_password from USERS where phone=#{phone}
+    </select>
+     -->
+    <!-- 查询登陆用户的基本信息 -->    
+    <select id="returnUserLoginBean" parameterType="String" resultType="sport.user.register.domain.ReturnUserLoginBean">
+    	select id,user_name,age,gender,address,email,phone,to_char(created_at,'yyyy-MM-dd HH24:mi:ss') as fromRegisterDate ,to_char(vip_to,'yyyy-MM-dd HH24:mi') as vip_to from USERS where phone=#{user_nameOrphone} or user_name=#{user_nameOrphone}
+    </select>
+    
+    <!-- 更新 Sign_in_count-->
+    <!--  <update id="loginAndUpdateSign_in_count" parameterType="String">
+       update USERS set sign_in_count=sign_in_count+1 where phone=#{user_nameOrPhone} or user_name=#{user_nameOrPhone}
+    </update>
+    -->
+    
+    <!-- 交互current_time and last_time-->
+    <!--  <update id="exchangeTime" parameterType="String">
+       update USERS set last_sign_in_at=current_sign_in_at, current_sign_in_at=sysdate where phone=#{user_nameOrPhone} or user_name=#{user_nameOrPhone}
+    </update>
+    -->
+    <!-- 交互current_Ip and last_Ip-->
+    <!--  <update id="exchangeIp">
+       update USERS set last_sign_in_ip=current_sign_in_ip, current_sign_in_ip=#{1} where phone=#{0} or user_name=#{0}
+    </update>
+    -->
+    <!-- updateAfterLogin -->
+    <update id="updateAfterLogin">
+       update USERS set last_sign_in_ip=current_sign_in_ip, current_sign_in_ip=#{1},sign_in_count=sign_in_count+1, last_sign_in_at=current_sign_in_at, current_sign_in_at=sysdate where phone=#{0} or user_name=#{0}
+    </update>
+    
+    
+    <!-- 查询登录后的用户ID -->
+    <select id="selectUserId" parameterType="String" resultType="String">
+    	select id from USERS where phone=#{user_nameOrphone} or user_name=#{user_nameOrphone}
+    </select>
+    
+    <!-- 登录成功后插入登录日志 -->
+    <insert id="loginSucessInsertLog" >
+    	<selectKey resultType="String" keyProperty="id" order="BEFORE"> 
+              select max(id)+1  as id from  USER_LOGS 
+    	</selectKey> 
+        insert into USER_LOGS(id,user_id,op_type,created_at,updated_at)  
+             values(#{id},#{1},1,sysdate,sysdate)      
+    </insert>
+    
+    <!-- 退出登录后插入日志 -->
+    <insert id="logoutSucessInsertLog" >
+    	<selectKey resultType="String" keyProperty="id" order="BEFORE"> 
+              select max(id)+1  as id from  USER_LOGS 
+    	</selectKey> 
+        insert into USER_LOGS(id,user_id,op_type,created_at,updated_at)  
+             values(#{id},#{1},2,sysdate,sysdate)      
+    </insert>
+    <!-- 忘记密码 -->
+    <update id="forgetPassword">
+       update USERS set encrypted_password=#{1},updated_at=sysdate where phone=#{0}
+    </update>
+    <!-- 重置密码 -->
+    <update id="resetPassword">
+       update USERS set encrypted_password=#{1},updated_at=sysdate where phone=#{0}
+    </update>
+    <!-- 在重置密码时，验证新旧密码是否一样 -->
+    <select id="compareTwoPassword" resultType="String">
+       select encrypted_password from USERS where phone=#{0}
+    </select>
+    <!-- 修改用户名 -->
+    <update id="resetUser_name">
+       update USERS set user_name=#{1},updated_at=sysdate where phone=#{0}
+    </update>
+    <!-- 分页查询用户日志表 -->
+    <select id="paginationSelect" resultType="sport.user.register.domain.UserLog" parameterType="sport.user.register.util.Page">
+       select * from USER_LOGS
+    </select>
+    <!-- 修改用户基本信息 -->
+    <update id="resetPersonalInfo" parameterType="sport.user.register.domain.UserResetPersonalInfo">
+       update USERS set email=#{email}, phone=#{phone},updated_at=sysdate, user_name=#{user_name}, age=#{age},gender=#{gender},address=#{address} where id=#{id}
+    </update>
+    <!-- 付费记录 -->     
+    <insert id="userPayments" parameterType="sport.user.register.domain.UserPaymentBean" >
+		 <selectKey resultType="String" keyProperty="id" order="BEFORE"> 
+              select max(id)+1  as id from  PAYMENTS
+    	 </selectKey>
+    	 insert into PAYMENTS(id,app,cbi,ct,fee,pt,sdk,ssid,st,tcd,"UID",ver,"SIGN",created_at,updated_at) 
+    	 values(#{id},#{app},#{cbi},#{ct},#{fee},#{pt},#{sdk},#{ssid},#{st},#{tcd},#{uid},#{ver},#{sign},sysdate,sysdate)
+    </insert> 
+    <!-- 付费记录查重 -->
+    <select id="userPaymentsRetry" resultType="String" parameterType="String">
+       select id from PAYMENTS where tcd=#{tcd}
+    </select>
+    <!-- 获取users表的总记录数 -->
+    <select id="countUsers" resultType="int">
+       select count(*) from USERS
+    </select>
+    <!-- 查出所有的web上显示的userinfo -->
+    <select id="selectAllWebUserInfo" resultType="sport.user.register.domain.ShowUserInfoBean" parameterType="sport.user.register.util.BootstrapPar">
+       select id,user_name,phone,email,age,gender,address,to_char(created_at,'yyyy-MM-dd HH24:mi:ss') as created_at,is_iphone,recommener from USERS
+    </select>
+    <!-- recordsFilteredSql -->
+    <select id="selectAllWebUserInfoFiltered" resultType="String" parameterType="sport.user.register.domain.RecordsFilteredBean">
+       select count(*) from USERS 
+    </select> 
+    <!-- 下载user表 -->
+    <select id="downloadUsers" resultType="sport.user.register.domain.ShowUserInfoBean">
+       select id,user_name,phone,email,age,gender,address,created_at,is_iphone,recommener from USERS 
+    </select>
+    <!-- 与user关联的日志 -->
+    <resultMap id="returnShowWebUserLogBean" type="sport.user.register.domain.ShowWebUserLogBean">
+        <id property="id" column="id" />
+        <result property="op_type" column="op_type" />
+        <result property="created_at" column="created_at" />
+        <result property="user_id" column="user_id" />
+        
+        <association property="associationUserLog" javaType="sport.user.register.domain.AssociationUserLog">        
+            <result property="user_name" column="user_name" />
+            <result property="current_sign_in_ip" column="current_sign_in_ip" />            
+        </association>        
+    </resultMap>
+    <select id="webShowUserLog" parameterType="String" resultMap="returnShowWebUserLogBean">
+       select USER_LOGS.id,USER_LOGS.op_type,USER_LOGS.created_at ,USER_LOGS.user_id ,USERS.user_name,USERS.current_sign_in_ip from USERS,USER_LOGS 
+              where USERS.id=USER_LOGS.user_id and USERS.id=#{id}
+    </select>
+        <!-- 与user关联的付费记录(易接) -->
+    <resultMap id="returnShowWebUserPaymentsBean" type="sport.user.register.domain.ShowWebUserPaymentsBean">
+        <id property="id" column="id" />
+        <result property="fee" column="fee" />
+        <result property="created_at" column="created_at" />
+        
+        <association property="associationUserPayments" javaType="sport.user.register.domain.AssociationUserPayments">        
+            <result property="user_name" column="user_name" />           
+        </association>        
+    </resultMap>
+    <select id="webShowUserPayments" parameterType="String" resultMap="returnShowWebUserPaymentsBean">
+       select PAYMENTS.id,PAYMENTS.fee,PAYMENTS.created_at ,USERS.user_name from USERS,PAYMENTS 
+              where USERS.id=PAYMENTS.cbi and USERS.id=#{id}
+    </select>
+    <!-- 与user关联的付费记录(支付宝) -->
+     <resultMap id="returnShowWebUserAliPaymentsBean" type="sport.user.register.domain.ShowWebUserAliPaymentsBean">
+        <id property="id" column="out_trade_no" />
+        <result property="fee" column="total_fee" />
+        <result property="created_at" column="gmt_payment" />
+        
+        <association property="associationUserPayments" javaType="sport.user.register.domain.AssociationUserPayments">        
+            <result property="user_name" column="user_name" />           
+        </association>        
+    </resultMap>
+    <select id="webShowUserAliPayments" parameterType="String" resultMap="returnShowWebUserAliPaymentsBean">
+       select T_ALIPAYMENT.out_trade_no,T_ALIPAYMENT.total_fee,T_ALIPAYMENT.gmt_payment ,USERS.user_name from USERS,T_ALIPAYMENT 
+              where USERS.id=T_ALIPAYMENT.userid and USERS.id=#{id}
+    </select>
+     <!-- 与user关联的付费记录(微信) -->
+     <resultMap id="returnShowWebUserWxPaymentsBean" type="sport.user.register.domain.ShowWebUserWxPaymentsBean">
+        <id property="id" column="out_trade_no" />
+        <result property="fee" column="total_fee" />
+        <result property="created_at" column="time_end" />
+        
+        <association property="associationUserPayments" javaType="sport.user.register.domain.AssociationUserPayments">        
+            <result property="user_name" column="user_name" />           
+        </association>        
+    </resultMap>
+    <select id="webShowUserWxPayments" parameterType="String" resultMap="returnShowWebUserWxPaymentsBean">
+       select T_WXPAYMENT.out_trade_no,T_WXPAYMENT.total_fee,T_WXPAYMENT.time_end ,USERS.user_name from USERS,T_WXPAYMENT 
+              where USERS.id=T_WXPAYMENT.userid and USERS.id=#{id}
+    </select>
+    
+    <!-- 管理员web登录 -->
+    <select id="webAdminLogin" resultType="String">
+       select id from USERS where is_admin=1 and encrypted_password=#{1,jdbcType=VARCHAR} and (user_name=#{0,jdbcType=VARCHAR} or phone=#{0,jdbcType=VARCHAR} )
+    </select>
+    <!-- 删除用户 -->
+    <delete id="deleteUser" parameterType="String">  
+        delete from USERS where id = #{id}  
+    </delete>
+    <!-- 统计所有的推荐战绩 -->
+    <select id="countAllRecMatch"  resultType="int">
+       select count(*) from T_MATCH_RECOMMEND
+    </select>
+    <!-- 统计所有全赢的推荐战绩 -->
+    <select id="countWinRecMatch"  resultType="int">
+       select count(*) from T_MATCH_RECOMMEND where result_type=2
+    </select>
+    <!-- 统计所有的半赢推荐战绩 -->
+    <select id="countHalfWinRecMatch"  resultType="int">
+       select count(*) from T_MATCH_RECOMMEND where result_type=1
+    </select>
+    <!-- 统计所有的走盘推荐战绩 -->
+    <select id="countDrawRecMatch"  resultType="int">
+       select count(*) from T_MATCH_RECOMMEND where result_type=0
+    </select>
+    <!-- 统计所有的全输推荐战绩 -->
+    <select id="countLostRecMatch"  resultType="int">
+       select count(*) from T_MATCH_RECOMMEND where result_type=-2
+    </select>
+    <!-- 统计所有的半输推荐战绩 -->
+    <select id="countHalfLostRecMatch"  resultType="int">
+       select count(*) from T_MATCH_RECOMMEND where result_type=-1
+    </select>
+</mapper>

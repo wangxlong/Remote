@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xmlns:context="http://www.springframework.org/schema/context"
+xmlns:tx="http://www.springframework.org/schema/tx"
+xmlns:jdbc="http://www.springframework.org/schema/jdbc" 
+xmlns:aop="http://www.springframework.org/schema/aop" 
+xsi:schemaLocation=" http://www.springframework.org/schema/beans 
+http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+http://www.springframework.org/schema/jdbc 
+http://www.springframework.org/schema/jdbc/spring-jdbc-3.2.xsd  
+http://www.springframework.org/schema/tx
+http://www.springframework.org/schema/tx/spring-tx-3.2.xsd 
+http://www.springframework.org/schema/aop 
+http://www.springframework.org/schema/aop/spring-aop-3.2.xsd 
+http://www.springframework.org/schema/context 
+http://www.springframework.org/schema/context/spring-context-3.2.xsd">
+     <!-- 引入jdbc配置文件 -->  
+     <bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="locations">
+            <list>
+               <value>classpath:properties/*.properties</value>
+                <!--要是有多个配置文件，只需在这里继续添加即可 -->
+            </list>
+        </property>
+    </bean>
+    <!-- 配置数据源 -->
+    <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+        <!-- 不使用properties来配置 -->
+        <!-- <property name="driverClassName" value="com.mysql.jdbc.Driver" /> <property name="url" value="jdbc:mysql://localhost:3306/learning" /> <property name="username" value="root" /> <property name="password" value="christmas258@" /> -->
+       <!-- 使用properties来配置 -->
+        <property name="driverClassName">
+            <value>${jdbc_driverClassName}</value>
+        </property>
+        <property name="url">
+            <value>${jdbc_url}</value>
+        </property>
+        <property name="username">
+            <value>${jdbc_username}</value>
+        </property>
+        <property name="password">
+            <value>${jdbc_password}</value>
+        </property>
+        <property name="initialSize" value="15" />
+		<property name="maxActive" value="150" />
+		<property name="maxIdle" value="100" />
+    </bean>
+    <!-- 自动扫描了所有的XxxxMapper.xml对应的mapper接口文件，这样就不用一个一个手动配置Mpper的映射了，只要Mapper接口类和Mapper映射文件对应起来就可以了。 -->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="sport.user.register.dao" />
+    </bean>
+    <!-- 开启注解配置 -->  
+    <context:annotation-config />
+     <!-- 事务管理器 -->    
+    <bean id="transactionManager"    
+        class="org.springframework.jdbc.datasource.DataSourceTransactionManager">    
+        <property name="dataSource" ref="dataSource" />    
+    </bean>
+    <!-- 开启事务注解驱动 -->  
+   <tx:annotation-driven transaction-manager="transactionManager" proxy-target-class="true"/> 
+   
+    <!-- 配置Mybatis的文件 ，mapperLocations配置**Mapper.xml文件位置，configLocation配置mybatis-config文件位置-->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource" />
+        <property name="mapperLocations" value="classpath:mapper/*.xml"/>
+        <property name="configLocation" value="classpath:mybatis/mybatis-config.xml" />
+        <!-- <property name="typeAliasesPackage" value="com.tiantian.ckeditor.model" /> -->
+    </bean>
+    <!--  
+	<bean id="userOperatorDao" class="org.mybatis.spring.mapper.MapperFactoryBean">  
+       <property name="mapperInterface" value="sport.user.register.dao.UserOperatorDao"></property>  
+       <property name="sqlSessionFactory" ref="sqlSessionFactory"></property>  
+    </bean> 
+    -->
+    
+    <!-- 配置quartz -->
+	<!-- 使用MethodInvokingJobDetailFactoryBean，任务类可以不实现Job接口，通过targetMethod指定调用方法-->    
+    <!-- 定义目标bean和bean中的方法 -->  
+    <bean id="TimerRecommenderStateJob" class="sport.user.register.util.TimerRecommenderState"/>  
+    <bean id="TimerRecommenderStateJobMethod" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">  
+    	<property name="targetObject">  
+        	<ref bean="TimerRecommenderStateJob"/>  
+    	</property>  
+    	<property name="targetMethod">  <!-- 要执行的方法名称 -->  
+        	<value>execute</value>  
+    	</property>  
+	</bean>  
+	<!-- ======================== 调度触发器 ======================== -->  
+	<bean id="CronTriggerBean" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">  
+    	<property name="jobDetail" ref="TimerRecommenderStateJobMethod"></property>  
+    	<property name="cronExpression" value="0 0 0 * * ?"></property>  
+	</bean>  
+  
+	<!-- ======================== 调度工厂 ======================== -->  
+	<bean id="SpringJobSchedulerFactoryBean" class="org.springframework.scheduling.quartz.SchedulerFactoryBean">  
+    	<property name="triggers">  
+        	<list>  
+            	<ref bean="CronTriggerBean"/>  
+        	</list>  
+    	</property>  
+	</bean>   
+   <context:component-scan base-package="sport.user.register.service"/>
+    <!-- 自动扫描注解的bean -->
+   <!--  <context:component-scan base-package="sport.user.register.service"/> -->
+   </beans>

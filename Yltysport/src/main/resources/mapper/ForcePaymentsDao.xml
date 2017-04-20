@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="sport.user.register.dao.ForcePaymentsDao">
+
+    <!-- 查询某个用户离当前时间的已注册天数 -->
+	<select id="hasRegisterDate" parameterType="String" resultType="String">
+    	select to_char(created_at,'yyyy-MM-dd HH24:mi:ss') from USERS where id=#{id}
+    </select>
+    
+	<!--查询某个用户的vip_to(vip截止日期)字段的值-->
+	<select id="selectVip_to" parameterType="String" resultType="String">
+    	select to_char(vip_to,'yyyy-MM-dd HH24:mi:ss') from USERS where id=#{id}
+    </select>
+    <!-- 用户付款，更新vip_to字段 -->
+    <update id="updateVip_to">
+        update USERS set vip_to=to_date(#{1},'yyyy-MM-dd HH24:mi:ss') where id=#{0}
+    </update>
+    <!-- 查出所有的web上显示的user的vip情况 -->
+    <resultMap id="userVipBean" type="sport.user.register.domain.UserVipBean">
+        <result property="user_name" column="user_name" />
+        <result property="vip_to" column="vip_time" />      
+    </resultMap>
+    
+    <select id="selectAllWebUserVip" resultMap="userVipBean" parameterType="sport.user.register.util.BootstrapPar">
+       select user_name,to_char(vip_to,'yyyy-MM-dd HH24:mi:ss') as vip_time from USERS
+    </select>
+    <!-- recordsFilteredSql -->
+    <select id="selectAllWebUserVipFiltered" resultType="String" parameterType="sport.user.register.domain.RecordsFilteredBean">
+       select count(*) from USERS 
+    </select>
+    <!--查询user总数-->
+    <select id="vipCountUsers" resultType="String">
+       select count(*) from USERS
+    </select>
+     <!--  管理员在web上设置有效期时，点击确认后更新vip_to字段 -->
+      <update id="webUpdateVip_to">
+        update USERS set vip_to=to_date(#{1},'yyyy-MM-dd HH24:mi:ss') where user_name=#{0}
+    </update>
+    <!-- 客户端获得vip_to字段 -->
+    <select id="toGetVip_to" resultType="String">
+       select to_char(vip_to,'yyyy-MM-dd HH24:mi') from USERS where id=#{id}
+    </select>
+    <!-- （支付宝）查询支付订单是否已经存在，如果存在不做处理 -->
+    <select id="queryOut_Trade_No" resultType="String">
+    	select out_trade_no from T_ALIPAYMENT where out_trade_no=#{0}
+    </select>
+    <!-- 支付宝付款记录插入 -->
+    <insert id="aliPayinsert"  parameterType="java.util.Map">
+    	 insert into T_ALIPAYMENT(notify_time,notify_type,notify_id,sign_type,sign,out_trade_no,subject,payment_type,trade_no,trade_status,seller_id,seller_email,buyer_id,buyer_email,total_fee,quantity,price,body,gmt_create,gmt_payment,is_total_fee_adjust,use_coupon,discount,userid) 
+    	 values(#{notify_time},#{notify_type},#{notify_id},#{sign_type},#{sign},#{out_trade_no},#{subject},#{payment_type},#{trade_no},
+    	 #{trade_status},#{seller_id},#{seller_email},#{buyer_id},#{buyer_email},#{total_fee},#{quantity},#{price},#{body},#{gmt_create},#{gmt_payment},#{is_total_fee_adjust},#{use_coupon},#{discount},#{userid})
+    </insert>
+    <!-- （微信）查询支付订单是否已经存在，如果存在不做处理 -->
+    <select id="wxqueryOut_Trade_No" resultType="String">
+    	select out_trade_no from T_WXPAYMENT where out_trade_no=#{0}
+    </select>
+    <!-- 微信付款记录插入 -->
+    <insert id="wxPayinsert"  parameterType="java.util.Map">
+    	 insert into T_WXPAYMENT(appid,mch_id,nonce_str,sign,result_code,openid,trade_type,bank_type,total_fee,cash_fee,transaction_id,out_trade_no,time_end,userid) 
+    	 values(#{appid},#{mch_id},#{nonce_str},#{sign},#{result_code},#{openid},#{trade_type},#{bank_type},#{total_fee},
+    	 #{cash_fee},#{transaction_id},#{out_trade_no},#{time_end},#{userid})
+    </insert>
+</mapper>

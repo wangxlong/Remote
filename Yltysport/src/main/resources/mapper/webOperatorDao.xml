@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="sport.user.register.dao.webOperatorDao">
+	
+	<insert id="writeAnnouncement">
+		 <selectKey resultType="String" keyProperty="id" order="BEFORE"> 
+              select max(id)+1  as id from  T_ANNOUNCEMENT 
+    	 </selectKey>
+    	
+        insert into T_ANNOUNCEMENT(id,title,content,created_at)  
+             values(#{id},#{0},#{1},sysdate)      
+    </insert>
+
+	<select id="selectThisMonthAnnouncement" resultType="sport.user.register.domain.AnnouncementBean">
+		<![CDATA[
+			select id,title,content, to_char(created_at,'yyyy-MM-dd HH24:mi') as created_at from T_ANNOUNCEMENT
+			where created_at >=TRUNC(SYSDATE, 'MM') and created_at<=last_day(SYSDATE) 
+		]]>	
+	</select>
+	
+	<select id="getIdAnnouncementBean" resultType="sport.user.register.domain.AnnouncementBean">
+		select id,title,content, to_char(created_at,'yyyy-MM-dd HH24:mi') as created_at from T_ANNOUNCEMENT
+		where id=#{0}
+	
+	</select>
+	
+	<delete id="deleteAnnouncement">
+		delete from T_ANNOUNCEMENT where id=#{0}
+	</delete>
+	
+</mapper>

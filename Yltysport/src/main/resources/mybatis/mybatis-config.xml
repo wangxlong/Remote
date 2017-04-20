@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>  
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd">  
+<configuration>
+    <!-- <mappers>  
+         <mapper resource="classpath:/sport/user/register/dao/UserOperatorDao.xml"></mapper>  
+   </mappers>  
+    -->
+    <settings>
+    	<setting name="cacheEnabled" value="false" />   
+       <!-- <setting name="useGeneratedKeys" value="true" /> -->
+       <setting name="logImpl" value="LOG4J"/>
+    </settings>
+    <!-- mybatis拦截器 -->
+    <plugins>
+    	<plugin interceptor="sport.user.register.util.SelectPageInterceptor">
+    		<property name="databaseType" value="oracle"/>
+    	</plugin>
+    </plugins>
+</configuration>
